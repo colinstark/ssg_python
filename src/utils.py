@@ -14,7 +14,6 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
 		else:
 			chunks = re.split(rf"(.+?)(?P<res>{re.escape(delimiter)}.+?{re.escape(delimiter)})(.+?)", node.text)
 			chunks = list(filter(lambda x: x != "", chunks))
-			print("CHUNKS", chunks)
 			for chunk in chunks:
 				parts = re.split(re.escape(delimiter), chunk)
 				if len(parts) > 1:
@@ -76,18 +75,14 @@ def extract_markdown_links(text):
 
 def text_to_textnodes(text):
 	nodes = [TextNode(text, TextType.TEXT)]
-	print("INITIAL TTN", nodes)
 	nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
 	nodes = split_nodes_delimiter(nodes, "*", TextType.ITALIC)
 	nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
-	print("TTN after BASIC TAGS", nodes)
 	if extract_markdown_images(text):
 		nodes = split_nodes_image(nodes)
 
 	if extract_markdown_links(text):
 		nodes = split_nodes_link(nodes)
-
-	print("TTN after LINKS AND IMAGES", nodes)
 
 	return nodes
 

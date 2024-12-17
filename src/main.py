@@ -6,7 +6,7 @@ from utils import extract_title, markdown_to_html_node
 def main():
 	purge_folder("public")
 	copy_directory("static", "public")
-	generate_page("content/index.md", "template.html", "public/index.html")
+	generate_pages_recursive("content", "template.html", "public")
 
 def purge_folder(target):
 	shutil.rmtree(target, ignore_errors=True)
@@ -46,5 +46,21 @@ def generate_page(from_path, template_path, dest_path):
 
 	with open(dest_path, 'w') as file:
 		file.write(template)
+
+
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+	print(f"Generating pagessss from {dir_path_content} to {dest_dir_path} using {template_path}.")
+
+	for entry in os.scandir(dir_path_content):
+		print("ENTRY", entry)
+		if entry.is_file() and entry.name.endswith('.md'):
+			print("IS FILE", entry, entry.name)
+			generate_page(os.path.join(dir_path_content, entry.name), template_path, os.path.join(dest_dir_path, entry.name.replace(".md", ".html")))
+
+		elif entry.is_dir():
+			print("IS DIR", dest_dir_path)
+			os.makedirs(os.path.join(dest_dir_path, entry.name), exist_ok=True)
+			generate_pages_recursive(os.path.join(dir_path_content, entry.name), template_path, os.path.join(dest_dir_path, entry.name))
+
 
 main()
