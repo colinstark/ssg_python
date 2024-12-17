@@ -19,7 +19,8 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
 				parts = re.split(re.escape(delimiter), chunk)
 				if len(parts) > 1:
 					nodes.append(TextNode(parts[1], text_type))
-					# @TODO: FIX losing entries here
+					if parts[2]:
+						nodes.append(TextNode(parts[2], TextType.TEXT))
 				else:
 					nodes.append(TextNode(chunk, TextType.TEXT))
 
