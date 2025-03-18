@@ -5,25 +5,51 @@ link_regex = r"\[(.+?)\]\((.+?)\)"
 image_regex = r"!\[(.+?)\]\((.+?)\)"
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
-	nodes = []
-	if len(old_nodes) == 0: return nodes
+    new_nodes = []
 
-	for node in old_nodes:
-		if node.text_type != TextType.TEXT:
-			nodes.append(node)
-		else:
-			chunks = re.split(rf"(.+?)(?P<res>{re.escape(delimiter)}.+?{re.escape(delimiter)})(.+?)", node.text)
-			chunks = list(filter(lambda x: x != "", chunks))
-			for chunk in chunks:
-				parts = re.split(re.escape(delimiter), chunk)
-				if len(parts) > 1:
-					nodes.append(TextNode(parts[1], text_type))
-					if parts[2]:
-						nodes.append(TextNode(parts[2], TextType.TEXT))
-				else:
-					nodes.append(TextNode(chunk, TextType.TEXT))
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
 
-	return nodes
+        text = old_node.text
+        parts = []
+
+        # Keep processing the text until no more delimiters are found
+        while delimiter in text:
+            # Find the first delimiter
+            start_idx = text.find(delimiter)
+            if start_idx > 0:
+                # Add text before delimiter as TEXT
+                parts.append((text[:start_idx], TextType.TEXT))
+
+            # Find the second delimiter
+            remaining = text[start_idx + len(delimiter):]
+            end_idx = remaining.find(delimiter)
+
+            if end_idx == -1:
+                # No closing delimiter found
+                parts.append((text[start_idx:], TextType.TEXT))
+                text = ""
+                break
+
+            # Add the delimited text with the special type
+            delimited_text = remaining[:end_idx]
+            parts.append((delimited_text, text_type))
+
+            # Continue with the rest of the text
+            text = remaining[end_idx + len(delimiter):]
+
+        # Add any remaining text
+        if text:
+            parts.append((text, TextType.TEXT))
+
+        # Create TextNodes from the parts
+        for part_text, part_type in parts:
+            new_nodes.append(TextNode(part_text, part_type))
+
+    return new_nodes
+
 
 def split_nodes_link(old_nodes):
 	nodes = []
@@ -77,6 +103,7 @@ def text_to_textnodes(text):
 	nodes = [TextNode(text, TextType.TEXT)]
 	nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
 	nodes = split_nodes_delimiter(nodes, "*", TextType.ITALIC)
+	nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
 	nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
 	if extract_markdown_images(text):
 		nodes = split_nodes_image(nodes)
